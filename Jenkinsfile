@@ -1,16 +1,4 @@
-pipeline {
-    agent any
-    stages {
-        stage('Build') {
-            steps {
-                sh 'echo "Hello World"'
-                sh 'printenv | sort'
-                sh '''
-                    echo "Multiline shell steps works too"
-                    ls -lah
-                    printenv | sort
-                '''
-            }
-        }
-    }
-}
+// import logparser and yaml runner libraries
+@Library(['pipeline-logparser@1.0.1', 'wolox-ci@changeset-handlers']) _
+env.DEFAULT_BRANCH="changeset-handlers"
+woloxCi("teamforge-nstester", "ws/icl_testbed-ci-jenkins/jenkins.yml")

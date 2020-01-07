@@ -1,0 +1,138 @@
+config:
+
+  project_name: test-project
+
+tasks:
+
+  linux_build:
+    type: build
+    os:
+      - LX: linux
+    artifacts:
+      paths:
+        - build/
+
+    steps:
+      build:
+        - printenv | sort
+        - echo Doing the build
+        - pwd
+        - echo 'Test escaping colons in text:\ '  
+        - echo 'Another escape test:'
+        - echo key:value pair
+        - ls -la
+        - mkdir -p build
+        - echo "Build Results" >> build/buildresults.txt
+
+  windows_build:
+    type: build
+    os:
+      - WN: windows
+    artifacts:
+      paths:
+        - wbuild/
+
+    steps:
+      build:
+        - printenv | sort
+        - echo Doing the build
+        - pwd
+        - ls -la
+        - mkdir -p wbuild
+        - echo "Build Results" >> wbuild/buildresults.txt
+
+  linux_build_2:
+    type: build
+    os:
+      - LX: linux
+    artifacts:
+      paths:
+        - build2/
+
+    steps:
+      build:
+        - echo Doing a dependent build
+        - pwd
+        - ls -la
+        - mkdir -p build2
+        - echo "Build Results" >> build2/buildresults2.txt
+
+  linux_scan:
+    type: scan
+    workspace: default
+    os:
+      - scels75: linux
+    artifacts:
+      paths:
+        - scansetup/
+        - scan/
+        - scandir/
+
+    steps:
+      scan:
+        - echo Doing the scan
+        - pwd
+        - ls -la
+        - mkdir -p scan
+        - mkdir -p scansetup
+        - mkdir -p scandir
+        - echo "Scan Log" >> scandir/scanlog.txt
+        - echo "Scan Setup" >> scansetup/setup.txt
+        - echo "Scan Results" >> scan/scanresults.txt
+
+  linux_test:
+    type: test
+    os:
+      - scels79: linux
+    workspace: empty
+    dependencies:
+      - linux_build_2
+      - linux_build:
+          paths:
+            - build/
+      - linux_scan:
+          os: scels75 
+          paths:
+            - scan/
+            - scansetup/
+
+    steps:
+      test:
+        - pwd
+        - ls -la
+        - cat scansetup/setup.txt
+        - cat scan/scanresults.txt
+        - echo "More log from the scan" >> scan/scanresults.txt
+        - echo Doing tests
+        - pwd
+        - ls -la
+        - touch testresults.txt
+        - echo +++Copying test artifacts
+        - set +x && source /ics/itools/unx/bin/icssetup.sh -sta /ics/itools/win/bin && set -x
+        - mkdir -p $ICS_ARCHIVE_ROOT/jenkins-test/$BUILD_TAG
+        - cp testresults.txt $ICS_ARCHIVE_ROOT/jenkins-test/$BUILD_TAG
+
+  linux_test_2:
+    os:
+      - scels79: linux
+    workspace: empty
+    dependencies:
+      - linux_build
+      - linux_build_2
+
+    steps:
+      test:
+        - pwd
+        - ls -la
+        - echo Doing more tests
+        - touch testresults2.txt
+        - echo +++Copying more test artifacts
+        - set +x && source /ics/itools/unx/bin/icssetup.sh -sta /ics/itools/win/bin && set -x
+        - mkdir -p $ICS_ARCHIVE_ROOT/jenkins-test/$BUILD_TAG
+        - cp testresults2.txt $ICS_ARCHIVE_ROOT/jenkins-test/$BUILD_TAG
+
+environment:
+  BUILD:  "build"
+  BUILD_REF: "build-ref"
+
+timeout:  240
